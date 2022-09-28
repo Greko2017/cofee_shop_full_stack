@@ -6,7 +6,8 @@
 
 ### Installing Dependencies
 
-#### Installing Node and NPM
+#### Installing Node and NPM make sure you install version 12.+ 
+#### If you already have, NodeJs on your machine use nvm
 
 This project depends on Nodejs and Node Package Manager (NPM). Before continuing, you must download and install Node (the download includes NPM) from [https://nodejs.com/en/download](https://nodejs.org/en/download/).
 

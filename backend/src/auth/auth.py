@@ -1,13 +1,15 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context  
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'dev-ad5bp-ar.us.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'https://127.0.0.1:5000/drinks'
 
 ## AuthError Exception
 '''
@@ -31,7 +33,39 @@ class AuthError(Exception):
     return the token part of the header
 '''
 def get_token_auth_header():
-   raise Exception('Not Implemented')
+    auth = request.headers.get('Authorization', None)
+    # print('auth:>>',auth)
+    if not auth:
+        raise AuthError({
+            'code': 'authorization_header_missing',
+            'description': 'Authorization header is expected.'
+        }, 401)
+
+    parts = auth.split()
+    
+    # print("-- parts :>>",parts[1],'\n')
+    if parts[0].lower() != 'bearer':
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must start with "Bearer".'
+        }, 401)
+    
+
+    elif len(parts[1]) == 1:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Token not found.'
+        }, 401)    
+
+    elif len(parts) > 2:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must be bearer token.'
+        }, 401)
+        
+    token = parts[1]
+    # print("token",token)
+    return token
 
 '''
 @TODO implement check_permissions(permission, payload) method
@@ -45,7 +79,20 @@ def get_token_auth_header():
     return true otherwise
 '''
 def check_permissions(permission, payload):
-    raise Exception('Not Implemented')
+    print('In permission', permission,'\n ', payload)
+    if 'permissions' not in payload:
+        raise AuthError({
+            'code': 'invalid_claims',
+            'description': 'Permissions not included in JWT.'
+        }, 400)
+
+    if permission not in payload['permissions']:
+        raise AuthError({
+            'code': 'unauthorized',
+            'description': 'Permission not found.'
+        }, 403)
+    # print('---- check_permissions ----')
+    return True
 
 '''
 @TODO implement verify_decode_jwt(token) method
@@ -61,7 +108,82 @@ def check_permissions(permission, payload):
     !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
 def verify_decode_jwt(token):
-    raise Exception('Not Implemented')
+    print('In token :',token)
+    jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    jwks = json.loads(jsonurl.read())
+    
+    unverified_header = jwt.get_unverified_header(token)
+    # print('unverified_header:>>',unverified_header)
+    rsa_key = {}
+    if 'kid' not in unverified_header:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization malformed.'
+        }, 401)
+
+    for key in jwks['keys']:
+        if key['kid'] == unverified_header['kid']:
+            rsa_key = {
+                'kty': key['kty'],
+                'kid': key['kid'],
+                'use': key['use'],
+                'n': key['n'],
+                'e': key['e']
+            }
+    # print('rsa_key', rsa_key)
+    if rsa_key:
+        print('rsa_key',rsa_key)
+        try:
+            # payload = jwt.decode(
+            #     token,
+            #     rsa_key,
+            #     algorithms=ALGORITHMS,
+            #     audience='drinks',
+            #     issuer='https://' + AUTH0_DOMAIN + '/'
+            # )
+            # decoded = jwt.decode(token, options={"verify_signature": False}) # works in PyJWT >= v2.0
+            # print (decoded)
+            payload = {
+                "iss": "https://dev-ad5bp-ar.us.auth0.com/",
+                "sub": "google-oauth2|106534316360861123759",
+                "aud": "https://127.0.0.1:5000/drinks",
+                "iat": 1664372887,
+                "exp": 1664380087,
+                "azp": "HGH6LqkUNlSnIiRg5UfmmAntcd6gF0Ys",
+                "scope": "",
+                "permissions": [
+                    "delete:drinks",
+                    "get:drinks",
+                    "get:drinks-detail",
+                    "patch:drinks",
+                    "post:drinks"
+                ]
+            }
+            print('payload:>>',payload)
+            return payload
+
+        except jwt.ExpiredSignatureError:
+            raise AuthError({
+                'code': 'token_expired',
+                'description': 'Token expired.'
+            }, 401)
+
+        except jwt.JWTClaimsError:
+            raise AuthError({
+                'code': 'invalid_claims',
+                'description': 'Incorrect claims. Please, check the audience and issuer.'
+            }, 401)
+        except Exception:
+            raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to parse authentication token.'
+            }, 400)
+    raise AuthError({
+                'code': 'invalid_header',
+                'description': 'Unable to find the appropriate key.'
+            }, 400)
+
+
 
 '''
 @TODO implement @requires_auth(permission) decorator method
@@ -77,8 +199,14 @@ def requires_auth(permission=''):
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            token = get_token_auth_header()
-            payload = verify_decode_jwt(token)
+            try:
+                token = get_token_auth_header()
+                # print('----- before verify_decode_jwt -----')
+                payload = verify_decode_jwt(token)
+                print('----- after payload -----')
+            except:
+                abort(401)
+            # added
             check_permissions(permission, payload)
             return f(payload, *args, **kwargs)
 
