@@ -78,19 +78,19 @@ def post_drinks(payload):
     if (title is None) or (recipe is None):
         abort(404)
 
-    try:
-        drink = Drink(title=title,recipe=recipe)
-        drink.insert()
-        
-        drinks = Drink.query.filter(Drink.id == drink.id)
-        formatted_drinks = [drink.long() for drink in drinks]
-        return jsonify({
-            'success': True,
-            'created': drink.id,
-            'drinks':formatted_drinks,
-        })
-    except:
-        abort(422)
+    # try:
+    drink = Drink(title=title,recipe=recipe)
+    drink.insert()
+    
+    drinks = Drink.query.filter(Drink.id == drink.id)
+    formatted_drinks = [drink.long() for drink in drinks]
+    return jsonify({
+        'success': True,
+        'created': drink.id,
+        'drinks':formatted_drinks,
+    })
+    # except:
+    #     abort(422)
 
 '''
 @TODO implement endpoint

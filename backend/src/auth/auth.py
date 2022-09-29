@@ -134,32 +134,30 @@ def verify_decode_jwt(token):
     if rsa_key:
         print('rsa_key',rsa_key)
         try:
-            # payload = jwt.decode(
-            #     token,
-            #     rsa_key,
-            #     algorithms=ALGORITHMS,
-            #     audience='drinks',
-            #     issuer='https://' + AUTH0_DOMAIN + '/'
-            # )
-            # decoded = jwt.decode(token, options={"verify_signature": False}) # works in PyJWT >= v2.0
-            # print (decoded)
-            payload = {
-                "iss": "https://dev-ad5bp-ar.us.auth0.com/",
-                "sub": "google-oauth2|106534316360861123759",
-                "aud": "https://127.0.0.1:5000/drinks",
-                "iat": 1664372887,
-                "exp": 1664380087,
-                "azp": "HGH6LqkUNlSnIiRg5UfmmAntcd6gF0Ys",
-                "scope": "",
-                "permissions": [
-                    "delete:drinks",
-                    "get:drinks",
-                    "get:drinks-detail",
-                    "patch:drinks",
-                    "post:drinks"
-                ]
-            }
-            print('payload:>>',payload)
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience='drinks',
+                issuer='https://' + AUTH0_DOMAIN + '/'
+            )
+            # payload = {
+            #     "iss": "https://dev-ad5bp-ar.us.auth0.com/",
+            #     "sub": "google-oauth2|106534316360861123759",
+            #     "aud": "https://127.0.0.1:5000/drinks",
+            #     "iat": 1664372887,
+            #     "exp": 1664380087,
+            #     "azp": "HGH6LqkUNlSnIiRg5UfmmAntcd6gF0Ys",
+            #     "scope": "",
+            #     "permissions": [
+            #         "delete:drinks",
+            #         "get:drinks",
+            #         "get:drinks-detail",
+            #         "patch:drinks",
+            #         "post:drinks"
+            #     ]
+            # }
+            # print('payload:>>',payload)
             return payload
 
         except jwt.ExpiredSignatureError:
