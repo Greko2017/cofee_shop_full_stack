@@ -82,12 +82,10 @@ def post_drinks(payload):
     drink = Drink(title=title,recipe=recipe)
     drink.insert()
     
-    drinks = Drink.query.filter(Drink.id == drink.id)
-    formatted_drinks = [drink.long() for drink in drinks]
     return jsonify({
         'success': True,
         'created': drink.id,
-        'drinks':formatted_drinks,
+        'drinks':[drink.long()],
     })
     # except:
     #     abort(422)
@@ -120,12 +118,10 @@ def patch_drinks(payload,id):
         drink.recipe = recipe
         drink.update()
         
-        drinks = Drink.query.filter(Drink.id == drink.id)
-        formatted_drinks = [drink.long() for drink in drinks]
         return jsonify({
             'success': True,
             'created': drink.id,
-            'drinks':formatted_drinks,
+            'drinks':[drink.long()],
         })
     except:
         abort(422)
@@ -179,7 +175,14 @@ def unprocessable(error):
                     }), 404
 
 '''
-
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    """
+    Receive the raised authorization error and propagates it as response
+    """
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response
 '''
 @TODO implement error handler for 404
     error handler should conform to general task above
