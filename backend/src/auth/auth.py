@@ -3,8 +3,6 @@ from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context  
 
 
 AUTH0_DOMAIN = 'dev-ad5bp-ar.us.auth0.com'
@@ -138,7 +136,7 @@ def verify_decode_jwt(token):
                 token,
                 rsa_key,
                 algorithms=ALGORITHMS,
-                audience='drinks',
+                audience=API_AUDIENCE,
                 issuer='https://' + AUTH0_DOMAIN + '/'
             )
             # payload = {
@@ -158,6 +156,7 @@ def verify_decode_jwt(token):
             #     ]
             # }
             # print('payload:>>',payload)
+            _request_ctx_stack.top.current_user = payload
             return payload
 
         except jwt.ExpiredSignatureError:
